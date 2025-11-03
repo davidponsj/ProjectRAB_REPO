@@ -39,7 +39,7 @@ public class PlayerInteractor : MonoBehaviour
             points += 1;
             //Destroy(other.gameObject);
             other.gameObject.SetActive(false);
-            playerCont.PlaySFX(1);
+            
         }
     }
 

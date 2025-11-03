@@ -4,35 +4,34 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("Editor References")]
-    public Rigidbody playerRb; //Referencia al Rigidbody del player
-    public AudioSource playerAudio; //Ref al emisor de sonidos del player
+    public Rigidbody playerRb; //Almacén del rigidbody del jugador para movimiento fisico
 
     [Header("Movement Parameters")]
-    public float speed = 10;
-    public Vector2 moveInput; //Almacén del input de movimiento de los periféricos que usamos para jugar
+    public float speed = 10; //Velocidad del personaje
+    public Vector2 moveInput; //Almacén del valor de los botones de movimiento
 
     [Header("Jump Parameters")]
-    public float jumpForce = 6;
-    public bool isGrounded = true;
+    public float jumpForce = 5; //Potencia de salto del personaje
+    public bool isGrounded = true; //Define si el personaje puede saltar (estar en el suelo)
 
     [Header("Respawn System")]
-    public float fallLimit = -10;
-    public Transform respawnPoint;
+    public float fallLimit = -10f; //Limite en -y que el personaje calcula para respawnear
+    public Transform respawPoint; //Referencia a la posición de respawn
 
-    [Header("Sound Configuration")]
-    public AudioClip[] soundCollection;
+
+
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
         //CinematicMovement();
-        //Respawn por altura
         if (transform.position.y <= fallLimit)
         {
             Respawn();
@@ -41,15 +40,15 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        //Update para calcular movimientos físicos
-        PhysicalMovement();
+        //Update para movimientos por fisica
+        PhyicalMovement();
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
-            isGrounded = true; //Devuelve la capacidad de saltar
+            isGrounded = true; //Resetear la posibilidad de salto
         }
         if (collision.gameObject.CompareTag("Obstacle"))
         {
@@ -60,15 +59,15 @@ public class PlayerController : MonoBehaviour
 
     void CinematicMovement()
     {
-        //Movimiento = (Dirección * velocidad * input)
-        //Necesitais multiplicar el movimiento por Time.deltaTime
+        //Recordar conjelar los ejes de rotación del rigibody
+        //Time.deltaTime es una marcas de tiempo que normaliza el movimiento cinematico
         transform.Translate(Vector3.right * speed * moveInput.x * Time.deltaTime);
         transform.Translate(Vector3.forward * speed * moveInput.y * Time.deltaTime);
     }
 
-    void PhysicalMovement()
+    void PhyicalMovement()
     {
-        //Añadir una fuerza al rigidbody = (Dirección * velocidad * input)
+        //Descongelar los ejes de rotación del rigibody
         playerRb.AddForce(Vector3.right * speed * moveInput.x);
         playerRb.AddForce(Vector3.forward * speed * moveInput.y);
     }
@@ -76,21 +75,14 @@ public class PlayerController : MonoBehaviour
     void Jump()
     {
         playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        PlaySFX(0);
     }
 
     void Respawn()
     {
-        //Sustituir el transform.position del player por el del punto de respawn
-        transform.position = respawnPoint.position;
-        //Resetear el valor de aceleración del rigidbody
-        playerRb.linearVelocity = new Vector3(0,0,0);
-        PlaySFX(2);
-    }
-
-    public void PlaySFX(int soundToPlay)
-    {
-        playerAudio.PlayOneShot(soundCollection[soundToPlay]);
+        //Sustituir la posición del player por la posición del punto respawn
+        transform.position = respawPoint.position;
+        //Resetear la energia de aceleración del rigibody
+        playerRb.linearVelocity = new Vector3(0, 0, 0);
     }
 
     #region Input Methods
@@ -100,9 +92,8 @@ public class PlayerController : MonoBehaviour
         moveInput = context.ReadValue<Vector2>();
     }
 
-    public void OnJump(InputAction.CallbackContext context) 
+    public void OnJump(InputAction.CallbackContext context)
     {
-
         if (context.performed && isGrounded == true)
         {
             isGrounded = false;
@@ -112,6 +103,11 @@ public class PlayerController : MonoBehaviour
 
 
 
-
     #endregion
+
+
+
+
+
+
 }
