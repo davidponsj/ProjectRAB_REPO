@@ -2,46 +2,56 @@
 using System.Collections;
 
 #if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem; // para el nuevo sistema de entrada
+using UnityEngine.InputSystem;
 #endif
 
-public enum AbilityType { None, Dash }
+public enum AbilityType { None, Dash, HighJump, SlowTime }
 
-[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(UnityEngine.Rigidbody))]
 public class PlayerBallController : MonoBehaviour
 {
     [Header("Movimiento")]
-    public float moveForce = 15f;
-    public float maxSpeed = 12f;
+    [SerializeField] private float moveForce = 15f;
+    [SerializeField] private float maxSpeed = 12f;
 
     [Header("Salto")]
-    public float jumpForce = 6f;
-    public float groundCheckDistance = 0.6f;
-    public LayerMask groundMask;
+    [SerializeField] private float jumpForce = 6f;
+    [SerializeField] private float highJumpMultiplier = 1.8f;
+    [SerializeField] private float groundCheckDistance = 0.6f;
+    [SerializeField] private LayerMask groundMask;
 
     [Header("Dash (1 uso)")]
-    public float dashForce = 15f;
-    public float dashDuration = 0.15f;
-    public float dashCooldown = 0.1f;
-    public float doubleTapWindow = 0.25f;
+    [SerializeField] private float dashForce = 15f;
+    [SerializeField] private float dashDuration = 0.15f;
+    [SerializeField] private float dashCooldown = 0.1f;
+    [SerializeField] private float doubleTapWindow = 0.25f;
+
+    [Header("Slow Time")]
+    [SerializeField] private float slowTimeScale = 0.35f;
+    [SerializeField] private float slowTimeDuration = 2.0f;
+    [SerializeField] private float slowTimeCooldown = 0.5f;
 
     [Header("VFX")]
-    public ParticleSystem dashParticles;
+    [SerializeField] private ParticleSystem dashParticles;
 
     [Header("UI")]
-    public AbilityUIController ui;
+    [SerializeField] private AbilityUIController ui;
 
-    private Rigidbody rb;
-    private Vector3 lastMoveDir = Vector3.forward;
+    private UnityEngine.Rigidbody rb;
+    private UnityEngine.Vector3 lastMoveDir = UnityEngine.Vector3.forward;
     private float lastSpaceDownTime = -999f;
     private bool isDashing = false;
     private bool dashOnCooldown = false;
+    private bool slowOnCooldown = false;
+
+    private float originalFixedDeltaTime = 0.02f;
 
     public AbilityType currentAbility { get; private set; } = AbilityType.None;
 
     void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        rb = GetComponent<UnityEngine.Rigidbody>();
+        originalFixedDeltaTime = Time.fixedDeltaTime;
         if (dashParticles != null)
             dashParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         UpdateUI();
@@ -50,6 +60,7 @@ public class PlayerBallController : MonoBehaviour
     void Update()
     {
         HandleJumpAndDashInput();
+        HandleOtherAbilityInput();
     }
 
     void FixedUpdate()
@@ -71,12 +82,17 @@ public class PlayerBallController : MonoBehaviour
             if (kb.sKey.isPressed || kb.downArrowKey.isPressed) v -= 1f;
             if (kb.wKey.isPressed || kb.upArrowKey.isPressed) v += 1f;
         }
+        else
+        {
+            h = Input.GetAxisRaw("Horizontal");
+            v = Input.GetAxisRaw("Vertical");
+        }
 #else
         h = Input.GetAxisRaw("Horizontal");
         v = Input.GetAxisRaw("Vertical");
 #endif
 
-        Vector3 input = new Vector3(h, 0f, v).normalized;
+        UnityEngine.Vector3 input = new UnityEngine.Vector3(h, 0f, v).normalized;
 
         if (input.sqrMagnitude > 0.001f)
         {
@@ -87,67 +103,115 @@ public class PlayerBallController : MonoBehaviour
 
     void HandleJumpAndDashInput()
     {
-        bool spaceDown = false;
+        bool spaceDown = Input.GetKeyDown(KeyCode.Space);
+        if (!spaceDown) return;
+
+        float t = Time.time;
+        bool doubleTap = (t - lastSpaceDownTime) <= doubleTapWindow;
+        lastSpaceDownTime = t;
+
+        Debug.Log($"[Input] Space pressed. currentAbility={currentAbility}");
+
+        // Primero comprobamos HighJump
+        bool grounded = IsGrounded(); // IsGrounded dibuja un raycast en escena
+        Debug.Log($"[Input] IsGrounded = {grounded}");
+
+        if (currentAbility == AbilityType.HighJump && grounded)
+        {
+            // Aplicamos HighJump con AddForce (Impulse) para que se note.
+            float highJumpForce = jumpForce * highJumpMultiplier; // ejemplo: jumpForce=6, multiplier=2 => 12
+            Debug.Log($"[HighJump] Activado. highJumpForce={highJumpForce}, mass={rb.mass}");
+            rb.AddForce(Vector3.up * highJumpForce, ForceMode.Impulse);
+
+            // Consumir la habilidad y actualizar UI inmediatamente
+            currentAbility = AbilityType.None;
+            UpdateUI();
+            Debug.Log("[HighJump] Habilidad consumida.");
+            return;
+        }
+
+        // Dash por doble tap (no tocamos si no tienes Dash)
+        if (doubleTap && currentAbility == AbilityType.Dash && !isDashing && !dashOnCooldown)
+        {
+            StartCoroutine(DashCoroutine());
+            return;
+        }
+
+        // Si llegamos aquí: No tienes HighJump (o no estabas en suelo)
+        if (grounded)
+        {
+            Debug.Log("[Jump] Salto normal aplicado.");
+            rb.AddForce(Vector3.up * (jumpForce * rb.mass), ForceMode.Impulse);
+        }
+        else
+        {
+            Debug.Log("[Jump] No grounded -> no salto.");
+        }
+    }
+
+    void HandleOtherAbilityInput()
+    {
+        bool ePressed = false;
 
 #if ENABLE_INPUT_SYSTEM
         var kb = Keyboard.current;
-        if (kb != null) spaceDown = kb.spaceKey.wasPressedThisFrame;
+        if (kb != null) ePressed = kb.eKey.wasPressedThisFrame;
+        else ePressed = Input.GetKeyDown(KeyCode.E);
 #else
-        spaceDown = Input.GetKeyDown(KeyCode.Space);
+        ePressed = Input.GetKeyDown(KeyCode.E);
 #endif
 
-        if (spaceDown)
+        if (ePressed && currentAbility == AbilityType.SlowTime && !slowOnCooldown)
         {
-            float t = Time.time;
-            bool doubleTap = (t - lastSpaceDownTime) <= doubleTapWindow;
-            lastSpaceDownTime = t;
-
-            if (doubleTap && currentAbility == AbilityType.Dash && !isDashing && !dashOnCooldown)
-            {
-                StartCoroutine(DashCoroutine());
-                return;
-            }
-
-            if (IsGrounded())
-            {
-                rb.AddForce(Vector3.up * (jumpForce * rb.mass), ForceMode.Impulse);
-            }
+            StartCoroutine(SlowTimeCoroutine());
+            currentAbility = AbilityType.None;
+            UpdateUI();
         }
     }
 
     bool IsGrounded()
     {
-        return Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundMask, QueryTriggerInteraction.Ignore);
+        UnityEngine.Vector3 origin = transform.position + UnityEngine.Vector3.up * 0.1f;
+        float checkDist = groundCheckDistance + 0.1f;
+        bool hit = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundMask);
+
+        Debug.DrawRay(transform.position, Vector3.down * groundCheckDistance, Color.green);
+        return hit;
     }
 
     void ClampHorizontalSpeed()
     {
-        Vector3 vel = rb.linearVelocity;
-        Vector3 horizontal = new Vector3(vel.x, 0f, vel.z);
+        UnityEngine.Vector3 vel = rb.linearVelocity;
+        UnityEngine.Vector3 horizontal = new UnityEngine.Vector3(vel.x, 0f, vel.z);
         if (horizontal.magnitude > maxSpeed && !isDashing)
         {
-            Vector3 clamped = horizontal.normalized * maxSpeed;
-            rb.linearVelocity = new Vector3(clamped.x, vel.y, clamped.z);
+            UnityEngine.Vector3 clamped = horizontal.normalized * maxSpeed;
+            rb.linearVelocity = new UnityEngine.Vector3(clamped.x, vel.y, clamped.z);
         }
     }
 
     IEnumerator DashCoroutine()
     {
+        if (isDashing) yield break;
         isDashing = true;
         dashOnCooldown = true;
 
-        Vector3 dashDir = lastMoveDir.sqrMagnitude > 0.001f ? lastMoveDir.normalized : Vector3.forward;
+        UnityEngine.Vector3 dashDir = lastMoveDir.sqrMagnitude > 0.001f ? lastMoveDir.normalized : UnityEngine.Vector3.forward;
 
-        // Orientar las partículas según dirección
         if (dashParticles != null)
         {
             var main = dashParticles.main;
             main.simulationSpace = ParticleSystemSimulationSpace.Local;
-            dashParticles.transform.forward = -dashDir;
+            dashParticles.transform.localRotation = Quaternion.LookRotation(-dashDir, UnityEngine.Vector3.up);
             dashParticles.Play();
         }
 
-        rb.AddForce(dashDir * dashForce, ForceMode.VelocityChange);
+        UnityEngine.Vector3 currentVel = rb.linearVelocity;
+        UnityEngine.Vector3 newVel = new UnityEngine.Vector3(dashDir.x * dashForce, currentVel.y, dashDir.z * dashForce);
+        rb.linearVelocity = newVel;
+
+        currentAbility = AbilityType.None;
+        UpdateUI();
 
         yield return new WaitForSeconds(dashDuration);
 
@@ -155,11 +219,29 @@ public class PlayerBallController : MonoBehaviour
             dashParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
 
         isDashing = false;
-        currentAbility = AbilityType.None;
-        UpdateUI();
 
         yield return new WaitForSeconds(dashCooldown);
         dashOnCooldown = false;
+    }
+
+    IEnumerator SlowTimeCoroutine()
+    {
+        if (slowOnCooldown) yield break;
+        slowOnCooldown = true;
+
+        float previousTimeScale = Time.timeScale;
+        float previousFixed = Time.fixedDeltaTime;
+
+        Time.timeScale = slowTimeScale;
+        Time.fixedDeltaTime = originalFixedDeltaTime * slowTimeScale;
+
+        yield return new WaitForSecondsRealtime(slowTimeDuration);
+
+        Time.timeScale = previousTimeScale;
+        Time.fixedDeltaTime = previousFixed;
+
+        yield return new WaitForSeconds(slowTimeCooldown);
+        slowOnCooldown = false;
     }
 
     public void GiveAbility(AbilityType ability)
@@ -173,6 +255,9 @@ public class PlayerBallController : MonoBehaviour
         if (ui != null)
         {
             string t = currentAbility == AbilityType.None ? "Sin habilidad" : currentAbility.ToString();
+            if (currentAbility == AbilityType.Dash) t += " (doble espacio)";
+            else if (currentAbility == AbilityType.HighJump) t += " (usa Espacio en suelo)";
+            else if (currentAbility == AbilityType.SlowTime) t += " (pulsa E)";
             ui.SetAbilityText(t);
         }
     }
