@@ -5,8 +5,8 @@ using UnityEngine.SceneManagement;
 public class PlayerInteractor : MonoBehaviour
 {
     [Header("Points System")]
-    public int points; //Puntuación actual del player (en juego)
-    public int winPoints = 1; //Puntuación a alcanzar para completar el nivel
+    public static int coins; //Puntuación actual del player (en juego)
+   // public int winPoints = 1; //Puntuación a alcanzar para completar el nivel
     public TMP_Text pointsText; //Ref al texto de puntos para que cambie dinámicamente
 
     [Header("Scene Management")]
@@ -18,34 +18,34 @@ public class PlayerInteractor : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        points = 0;
+        coins = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (points >= winPoints)
-        {
-            LoadScene();
-        }
-
-        pointsText.text = "Points: " + points.ToString();
+        pointsText.text = "Monedas: " + coins.ToString();
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("PickUp"))
         {
-            points += 1;
+            PlayerInteractor.coins++;
             //Destroy(other.gameObject);
             other.gameObject.SetActive(false);
-            playerCont.PlaySFX(1);
+            PlayerPrefs.SetInt("NumberOfCoins", PlayerInteractor.coins);
         }
     }
 
     public void LoadScene()
     {
         SceneManager.LoadScene(sceneToLoad);
+    }
+
+    private void Awake()
+    {
+        coins = PlayerPrefs.GetInt("NumberOfCoins", 0);
     }
 
 }
