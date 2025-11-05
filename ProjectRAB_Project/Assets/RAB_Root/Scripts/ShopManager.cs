@@ -8,6 +8,7 @@ public class ShopManager : MonoBehaviour
 
     public BallBlueprint[] balls;
     public Button buyButton;
+    public Button selectButton;
     public TextMeshProUGUI coinsText;
 
     void Start()
@@ -93,10 +94,13 @@ public class ShopManager : MonoBehaviour
         if (b.isUnlocked)
         {
             buyButton.gameObject.SetActive(false);
+            selectButton.gameObject.SetActive(true);
+           
         }
         else
         {
             buyButton.gameObject.SetActive(true);
+            selectButton.gameObject.SetActive(false);
             buyButton.GetComponentInChildren<TextMeshProUGUI>().text = "Buy-" + b.price;
             if(b.price <= PlayerPrefs.GetInt("NumberOfCoins", 0))
             {
@@ -106,6 +110,7 @@ public class ShopManager : MonoBehaviour
             {
                 buyButton.interactable = false;
             }
+
         }
     }
 }
