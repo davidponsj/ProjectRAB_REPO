@@ -77,7 +77,7 @@ public class ShopManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void UnlockCar()
+    public void UnlockBall()
     {
         BallBlueprint b = balls[currentBallIndex];
 
