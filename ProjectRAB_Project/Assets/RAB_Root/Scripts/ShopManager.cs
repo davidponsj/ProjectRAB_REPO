@@ -10,6 +10,7 @@ public class ShopManager : MonoBehaviour
     public Button buyButton;
     public Button selectButton;
     public TextMeshProUGUI coinsText;
+    public TextMeshProUGUI buyPrice;
 
     void Start()
     {
@@ -95,13 +96,15 @@ public class ShopManager : MonoBehaviour
         {
             buyButton.gameObject.SetActive(false);
             selectButton.gameObject.SetActive(true);
-           
+            buyPrice.gameObject.SetActive(false);
         }
         else
         {
+            
+            buyPrice.gameObject.SetActive(true);
             buyButton.gameObject.SetActive(true);
+            buyPrice.text = b.price + " Monedas";
             selectButton.gameObject.SetActive(false);
-            buyButton.GetComponentInChildren<TextMeshProUGUI>().text = "Buy-" + b.price;
             if(b.price <= PlayerPrefs.GetInt("NumberOfCoins", 0))
             {
                 buyButton.interactable = true;
