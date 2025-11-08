@@ -38,6 +38,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/RAB_Root/Scenes/SCN_MainMenuTest.unity
     guid: f2c8bffe1d3d71145b36abd175dd5999
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/SCN_ContextGame.unity
+    guid: 15abbfe50f612c0468e1a4c0a29312c2
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
