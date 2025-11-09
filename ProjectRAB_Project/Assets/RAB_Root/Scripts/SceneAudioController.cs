@@ -1,52 +1,45 @@
 using UnityEngine;
+using UnityEngine.UI;
 
-[RequireComponent(typeof(AudioSource))]
 public class SceneAudioController : MonoBehaviour
 {
-    public bool treatAsSFX = true; // true = usar SFX volume, false = usar MUSIC volume (por ejemplo loops musicales)
-    private AudioSource src;
+    [Header("Sliders de audio en la escena")]
+    public Slider musicSlider;
+    public Slider sfxSlider;
 
-    void Awake()
+    void Start()
     {
-        src = GetComponent<AudioSource>();
-    }
-
-    void OnEnable()
-    {
-        // Aplicar volumen actual al activarse
-        if (PersistentAudioManager.Instance != null)
+        // Asegurarse de que el PersistentAudioManager existe
+        if (PersistentAudioManager.Instance == null)
         {
-            float v = treatAsSFX ? PersistentAudioManager.Instance.CurrentSFXVolume
-                                 : PersistentAudioManager.Instance.CurrentMusicVolume;
-            src.volume = v;
+            Debug.LogError("PersistentAudioManager no encontrado en la escena.");
+            return;
+        }
 
-            // Suscribir al evento para cambios futuros
-            if (treatAsSFX)
-                PersistentAudioManager.Instance.OnSFXVolumeChanged += OnSFXVolumeChanged;
-            else
-                PersistentAudioManager.Instance.OnMusicVolumeChanged += OnMusicVolumeChanged;
+        // Conectar sliders a los volúmenes actuales
+        if (musicSlider != null)
+        {
+            musicSlider.value = PersistentAudioManager.Instance.CurrentMusicVolume;
+            musicSlider.onValueChanged.AddListener(PersistentAudioManager.Instance.SetMusicVolume);
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.value = PersistentAudioManager.Instance.CurrentSFXVolume;
+            sfxSlider.onValueChanged.AddListener(PersistentAudioManager.Instance.SetSFXVolume);
         }
     }
 
-    void OnDisable()
+    void OnDestroy()
     {
-        // Desuscribir para evitar memory leaks
+        // Limpiar listeners para evitar errores al cambiar de escena
         if (PersistentAudioManager.Instance != null)
         {
-            if (treatAsSFX)
-                PersistentAudioManager.Instance.OnSFXVolumeChanged -= OnSFXVolumeChanged;
-            else
-                PersistentAudioManager.Instance.OnMusicVolumeChanged -= OnMusicVolumeChanged;
+            if (musicSlider != null)
+                musicSlider.onValueChanged.RemoveListener(PersistentAudioManager.Instance.SetMusicVolume);
+
+            if (sfxSlider != null)
+                sfxSlider.onValueChanged.RemoveListener(PersistentAudioManager.Instance.SetSFXVolume);
         }
-    }
-
-    void OnSFXVolumeChanged(float newVol)
-    {
-        src.volume = newVol;
-    }
-
-    void OnMusicVolumeChanged(float newVol)
-    {
-        src.volume = newVol;
     }
 }

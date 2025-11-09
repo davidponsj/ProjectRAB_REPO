@@ -1,33 +1,22 @@
-using System;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PersistentAudioManager : MonoBehaviour
 {
     public static PersistentAudioManager Instance;
 
-    [Header("AudioSources")]
-    public AudioSource musicSource; // asigna en inspector
-    public AudioSource sfxSource;   // asigna en inspector
+    [Header("Audio Sources")]
+    public AudioSource musicSource; // Asigna el AudioSource de música
+    public AudioSource sfxSource;   // Asigna el AudioSource de efectos
 
-    [Header("UI Sliders (opcional)")]
-    public Slider musicSlider;
-    public Slider sfxSlider;
-
-    const string MUSIC_KEY = "MusicVolSimple";
-    const string SFX_KEY = "SFXVolSimple";
-
-    // Estado actual (0..1)
-    public float CurrentMusicVolume { get; private set; } = 1f;
-    public float CurrentSFXVolume { get; private set; } = 1f;
-
-    // Evento para notificar cambios de volumen (sfx o music)
-    public event Action<float> OnSFXVolumeChanged;
-    public event Action<float> OnMusicVolumeChanged;
+    [Header("Volúmenes iniciales")]
+    [Range(0f, 1f)]
+    public float CurrentMusicVolume = 1f;
+    [Range(0f, 1f)]
+    public float CurrentSFXVolume = 1f;
 
     void Awake()
     {
-        // Singleton básico
+        // Singleton: si ya existe, destruye el duplicado
         if (Instance == null)
         {
             Instance = this;
@@ -39,73 +28,49 @@ public class PersistentAudioManager : MonoBehaviour
             return;
         }
 
-        // Cargar valores guardados y aplicarlos
-        CurrentMusicVolume = PlayerPrefs.HasKey(MUSIC_KEY) ? PlayerPrefs.GetFloat(MUSIC_KEY) : 1f;
-        CurrentSFXVolume = PlayerPrefs.HasKey(SFX_KEY) ? PlayerPrefs.GetFloat(SFX_KEY) : 1f;
-
-        ApplyMusic(CurrentMusicVolume);
-        ApplySFX(CurrentSFXVolume);
-
-        // Inicializar sliders (si están referenciados)
-        if (musicSlider != null) musicSlider.value = CurrentMusicVolume;
-        if (sfxSlider != null) sfxSlider.value = CurrentSFXVolume;
-
-        // Añadir listeners si los sliders existen
-        if (musicSlider != null) musicSlider.onValueChanged.AddListener(OnMusicSliderChanged);
-        if (sfxSlider != null) sfxSlider.onValueChanged.AddListener(OnSFXSliderChanged);
+        // Aplicar los volúmenes iniciales
+        ApplyVolumes();
     }
 
-    public void OnMusicSliderChanged(float v)
+    // Ajusta el volumen de música
+    public void SetMusicVolume(float vol)
     {
-        SetMusicVolume(v);
+        CurrentMusicVolume = Mathf.Clamp01(vol);
+        ApplyVolumes();
     }
 
-    public void OnSFXSliderChanged(float v)
+    // Ajusta el volumen de efectos
+    public void SetSFXVolume(float vol)
     {
-        SetSFXVolume(v);
+        CurrentSFXVolume = Mathf.Clamp01(vol);
+        ApplyVolumes();
     }
 
-    // Método público por si quieres cambiar volumen desde otros scripts
-    public void SetMusicVolume(float linear)
+    // Aplica los volúmenes a los AudioSources
+    private void ApplyVolumes()
     {
-        CurrentMusicVolume = Mathf.Clamp01(linear);
-        ApplyMusic(CurrentMusicVolume);
-        PlayerPrefs.SetFloat(MUSIC_KEY, CurrentMusicVolume);
-        OnMusicVolumeChanged?.Invoke(CurrentMusicVolume);
+        if (musicSource != null)
+            musicSource.volume = CurrentMusicVolume;
+
+        if (sfxSource != null)
+            sfxSource.volume = CurrentSFXVolume;
     }
 
-    public void SetSFXVolume(float linear)
+    // Reproduce un clip de efecto de sonido
+    public void PlaySFX(AudioClip clip)
     {
-        CurrentSFXVolume = Mathf.Clamp01(linear);
-        ApplySFX(CurrentSFXVolume);
-        PlayerPrefs.SetFloat(SFX_KEY, CurrentSFXVolume);
-        OnSFXVolumeChanged?.Invoke(CurrentSFXVolume);
+        if (clip != null && sfxSource != null)
+            sfxSource.PlayOneShot(clip, CurrentSFXVolume);
     }
 
-    void ApplyMusic(float linear)
+    // Reproduce un clip de música (opcional)
+    public void PlayMusic(AudioClip clip, bool loop = true)
     {
-        if (musicSource != null) musicSource.volume = Mathf.Clamp01(linear);
-    }
-
-    void ApplySFX(float linear)
-    {
-        if (sfxSource != null) sfxSource.volume = Mathf.Clamp01(linear);
-    }
-
-    // Reproducir SFX vía el SFXPlayer central
-    public void PlaySFX(AudioClip clip, float volume = 1f)
-    {
-        if (clip == null || sfxSource == null) return;
-        sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume * CurrentSFXVolume));
-    }
-
-    // Cambiar la música actual
-    public void PlayMusicClip(AudioClip clip, bool loop = true)
-    {
-        if (musicSource == null) return;
-        musicSource.clip = clip;
-        musicSource.loop = loop;
-        musicSource.Play();
-        ApplyMusic(CurrentMusicVolume);
+        if (clip != null && musicSource != null)
+        {
+            musicSource.clip = clip;
+            musicSource.loop = loop;
+            musicSource.Play();
+        }
     }
 }
