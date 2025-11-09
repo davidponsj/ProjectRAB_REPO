@@ -29,12 +29,20 @@ public class PlayerInteractor : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        // Si el jugador toca un objeto con tag "PickUp"
         if (other.gameObject.CompareTag("PickUp"))
         {
-            PlayerInteractor.coins++;
-            Destroy(other.gameObject);
-            //other.gameObject.SetActive(false);
-            PlayerPrefs.SetInt("NumberOfCoins", PlayerInteractor.coins);
+            coins++; // Suma una moneda
+
+            // Guarda el estado de la moneda específica
+            PickUpItem item = other.gameObject.GetComponent<PickUpItem>();
+            if (item != null)
+            {
+                PlayerPrefs.SetInt(item.uniqueID, 1); // Marca la moneda como recogida
+            }
+
+            Destroy(other.gameObject); // Elimina la moneda de la escena
+            PlayerPrefs.SetInt("NumberOfCoins", coins); // Actualiza el total de monedas
         }
     }
 
