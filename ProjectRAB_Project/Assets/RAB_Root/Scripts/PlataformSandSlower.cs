@@ -1,39 +1,54 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlataformSandSlower : MonoBehaviour
 {
-    [Header("Velocidades")]
-    public float velocidadNormal = 5f;
-    public float velocidadReducida = 2f;
+    // Velocidad normal del jugador
+    public float normalSpeed = 5f;
 
-    private float velocidadActual;
-    private CharacterController controller;
+    // Velocidad reducida cuando está en la arena
+    public float slowSpeed = 2f;
 
-    private void Start()
+    // Componente Rigidbody del jugador
+    private Rigidbody rb;
+
+    // Bandera para verificar si el jugador está en la arena
+    private bool isInSand = false;
+
+    void Start()
     {
-        controller = GetComponent<CharacterController>();
-        velocidadActual = velocidadNormal;
+        // Obtener el Rigidbody del jugador
+        rb = GetComponent<Rigidbody>();
     }
 
-    private void Update()
+    void Update()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-
-        Vector3 movimiento = new Vector3(horizontal, 0, vertical);
-        controller.Move(movimiento * velocidadActual * Time.deltaTime);
-    }
-
-    private void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        // Si el jugador toca una plataforma con el tag "SlowPlatform"
-        if (hit.collider.CompareTag("SlowPlatform"))
+        // Si está en la arena, reducir la velocidad
+        if (isInSand)
         {
-            velocidadActual = velocidadReducida;
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, slowSpeed);
         }
         else
         {
-            velocidadActual = velocidadNormal;
+            // Si no está en la arena, usar la velocidad normal
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, normalSpeed);
+        }
+    }
+
+    // Cuando el jugador entra en contacto con la arena
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Sand"))
+        {
+            isInSand = true; // El jugador está en la arena
+        }
+    }
+
+    // Cuando el jugador deja de estar en contacto con la arena
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Sand"))
+        {
+            isInSand = false; // El jugador salió de la arena
         }
     }
 }

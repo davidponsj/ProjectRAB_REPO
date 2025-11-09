@@ -33,7 +33,7 @@ EditorBuildSettings:
     path: Assets/RAB_Root/Scenes/SCN David/SkinsMenu.unity
     guid: 3f8715b449d3d8e46a5346148a121cad
   - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_AlejandroTest 1.unity
+    path: Assets/RAB_Root/Scenes/SCN Alejandro/SCN_AlejandroTest 1.unity
     guid: a858b404466b9c545aaa65fb9398ec09
   - enabled: 1
     path: Assets/RAB_Root/Scenes/SCN_MainMenuTest.unity
