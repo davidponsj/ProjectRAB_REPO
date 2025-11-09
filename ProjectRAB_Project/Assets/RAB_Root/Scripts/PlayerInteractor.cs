@@ -32,8 +32,8 @@ public class PlayerInteractor : MonoBehaviour
         if (other.gameObject.CompareTag("PickUp"))
         {
             PlayerInteractor.coins++;
-            //Destroy(other.gameObject);
-            other.gameObject.SetActive(false);
+            Destroy(other.gameObject);
+            //other.gameObject.SetActive(false);
             PlayerPrefs.SetInt("NumberOfCoins", PlayerInteractor.coins);
         }
     }
