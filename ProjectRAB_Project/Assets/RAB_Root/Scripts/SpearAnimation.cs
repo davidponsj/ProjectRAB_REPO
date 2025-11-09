@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class SpearTrapUltraSimple : MonoBehaviour
 {
-    public Transform spear;             // Lanza que se mover·
+    public Transform spear;             // Lanza que se moverÅE    
     public float moveDistance = 2f;     // Distancia del movimiento
     public float speed = 2f;            // Velocidad del movimiento
     public float startDelay = 0f;       // Retraso inicial
