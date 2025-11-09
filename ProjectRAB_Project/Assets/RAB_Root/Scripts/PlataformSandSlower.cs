@@ -1,12 +1,18 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class PlataformSandSlower : MonoBehaviour
 {
     // Velocidad normal del jugador
-    public float normalSpeed = 5f;
+    public float normalSpeed ;
 
     // Velocidad reducida cuando está en la arena
     public float slowSpeed = 2f;
+
+    public float moveForce ;
+
+    public float slowmoveForce = 2;
+
 
     // Componente Rigidbody del jugador
     private Rigidbody rb;
@@ -35,20 +41,25 @@ public class PlataformSandSlower : MonoBehaviour
     }
 
     // Cuando el jugador entra en contacto con la arena
-    void OnTriggerEnter(Collider other)
+    void OnCollisionEnter(Collision other)
     {
-        if (other.CompareTag("Sand"))
+        if (other.gameObject.CompareTag("Player"))
         {
-            isInSand = true; // El jugador está en la arena
+            normalSpeed = other.gameObject.GetComponent<PlayerBallController>().MoveSpeed;
+            moveForce = other.gameObject.GetComponent<PlayerBallController>().MoveForce;
+            other.gameObject.GetComponent<PlayerBallController>().MoveSpeed = slowSpeed;
+            other.gameObject.GetComponent<PlayerBallController>().MoveForce = slowmoveForce;
         }
     }
 
     // Cuando el jugador deja de estar en contacto con la arena
-    void OnTriggerExit(Collider other)
+    void OnCollisionExit(Collision other)
     {
-        if (other.CompareTag("Sand"))
+        if (other.gameObject.CompareTag("Player"))
         {
             isInSand = false; // El jugador salió de la arena
+            other.gameObject.GetComponent<PlayerBallController>().MoveSpeed = normalSpeed;
+            other.gameObject.GetComponent<PlayerBallController>().MoveForce = moveForce;
         }
     }
 }

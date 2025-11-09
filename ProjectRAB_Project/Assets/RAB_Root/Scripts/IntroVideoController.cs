@@ -1,42 +1,108 @@
 using UnityEngine;
 using UnityEngine.Video;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class IntroVideoController : MonoBehaviour
 {
-    public VideoPlayer videoPlayer;  // arrastra aquí tu componente VideoPlayer
-    public string nextSceneName = "Menu"; // la escena a la que saltará
+    [Header("Video & Escena")]
+    public VideoPlayer videoPlayer;
+    public string nextSceneName = "Menu";
+
+    [Header("Fade Out")]
+    public CanvasGroup fadeCanvas;    // un CanvasGroup negro que cubre la pantalla
+    public float fadeDuration = 0.5f; // duración del fade
+
+    [Header("Skip Input")]
+    public KeyCode[] skipKeys = new KeyCode[] { KeyCode.Space, KeyCode.Escape, KeyCode.Return };
+    public string[] skipButtons = new string[] { "Submit" }; // Input Manager para mando
 
     private bool isSkipping = false;
+    private bool videoStarted = false;
 
     void Start()
     {
-        // Cuando el video termina, llamamos a OnVideoEnd
+        isSkipping = false;
+
+        if (videoPlayer == null || videoPlayer.clip == null)
+        {
+            Debug.LogError("VideoPlayer no tiene clip asignado!");
+            return;
+        }
+
+        // Asegurarse de que el fadeCanvas esté invisible
+        if (fadeCanvas != null) fadeCanvas.alpha = 0f;
+
+        // Comenzar a reproducir
+        videoPlayer.Play();
+
+        // Iniciamos corutina para esperar que el video realmente comience
+        StartCoroutine(WaitForVideoStart());
+    }
+
+    IEnumerator WaitForVideoStart()
+    {
+        // Espera mientras el video no esté reproduciéndose
+        while (!videoPlayer.isPlaying)
+            yield return null;
+
+        videoStarted = true;
+
+        // Conectamos el evento de fin de video
         videoPlayer.loopPointReached += OnVideoEnd;
     }
 
     void Update()
     {
-        // Si pulsa una tecla o botón, saltamos
-        if (!isSkipping && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)))
+        // Solo permite saltar después de que el video haya empezado
+        if (videoStarted && !isSkipping && (AnySkipKeyPressed() || AnySkipButtonPressed()))
         {
-            SkipVideo();
+            StartCoroutine(SkipVideo());
         }
     }
 
-    void SkipVideo()
+    IEnumerator SkipVideo()
     {
         isSkipping = true;
-        // Opcional: aquí puedes llamar a tu función de fade out
-        // StartCoroutine(FadeOutAndLoad());
+
+        // Fade out si hay CanvasGroup asignado
+        if (fadeCanvas != null)
+        {
+            float t = 0f;
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                fadeCanvas.alpha = Mathf.Clamp01(t / fadeDuration);
+                yield return null;
+            }
+            fadeCanvas.alpha = 1f;
+        }
+
         SceneManager.LoadScene(nextSceneName);
     }
 
     void OnVideoEnd(VideoPlayer vp)
     {
+        // Solo dispara si no se está saltando
         if (!isSkipping)
         {
-            SceneManager.LoadScene(nextSceneName);
+            StartCoroutine(SkipVideo());
         }
+    }
+
+    // Funciones auxiliares para detectar input
+    bool AnySkipKeyPressed()
+    {
+        foreach (var k in skipKeys)
+            if (Input.GetKeyDown(k)) return true;
+        return false;
+    }
+
+    bool AnySkipButtonPressed()
+    {
+        foreach (var b in skipButtons)
+            if (!string.IsNullOrEmpty(b) && Input.GetButtonDown(b))
+                return true;
+        return false;
     }
 }

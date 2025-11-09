@@ -8,7 +8,9 @@ public class PlayerBallController : MonoBehaviour
 {
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 6f;       // velocidad horizontal objetivo (m/s)
+    public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } }
     [SerializeField] private float moveForce = 18f;     // (se usa solo fuera de slow)
+    public float MoveForce { get { return moveForce; } set { moveForce = value; } }
     [SerializeField] private float maxSpeed = 12f;
 
     [Header("Salto")]
