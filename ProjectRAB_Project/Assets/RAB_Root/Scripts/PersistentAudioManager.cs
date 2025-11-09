@@ -1,22 +1,22 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PersistentAudioManager : MonoBehaviour
 {
     public static PersistentAudioManager Instance;
 
-    [Header("Audio Sources")]
-    public AudioSource musicSource; // Asigna el AudioSource de música
-    public AudioSource sfxSource;   // Asigna el AudioSource de efectos
+    public AudioSource musicSource;
+    public AudioSource sfxSource;
 
-    [Header("Volúmenes iniciales")]
     [Range(0f, 1f)]
     public float CurrentMusicVolume = 1f;
     [Range(0f, 1f)]
     public float CurrentSFXVolume = 1f;
 
+    public AudioClip menuMusic; // Música específica del menú
+
     void Awake()
     {
-        // Singleton: si ya existe, destruye el duplicado
         if (Instance == null)
         {
             Instance = this;
@@ -28,42 +28,56 @@ public class PersistentAudioManager : MonoBehaviour
             return;
         }
 
-        // Aplicar los volúmenes iniciales
         ApplyVolumes();
+        SceneManager.sceneLoaded += OnSceneLoaded; // Nos avisará cuando cambie la escena
     }
 
-    // Ajusta el volumen de música
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Ejemplo: reproducir música solo en la escena "Menu"
+        if (scene.name == "SCN_MainMenuTest")
+        {
+            PlayMusic(menuMusic, true);
+        }
+        else
+        {
+            // Para otras escenas, para la música
+            if (musicSource.isPlaying)
+                musicSource.Stop();
+        }
+    }
+
     public void SetMusicVolume(float vol)
     {
         CurrentMusicVolume = Mathf.Clamp01(vol);
         ApplyVolumes();
     }
 
-    // Ajusta el volumen de efectos
     public void SetSFXVolume(float vol)
     {
         CurrentSFXVolume = Mathf.Clamp01(vol);
         ApplyVolumes();
     }
 
-    // Aplica los volúmenes a los AudioSources
     private void ApplyVolumes()
     {
         if (musicSource != null)
             musicSource.volume = CurrentMusicVolume;
-
         if (sfxSource != null)
             sfxSource.volume = CurrentSFXVolume;
     }
 
-    // Reproduce un clip de efecto de sonido
     public void PlaySFX(AudioClip clip)
     {
         if (clip != null && sfxSource != null)
             sfxSource.PlayOneShot(clip, CurrentSFXVolume);
     }
 
-    // Reproduce un clip de música (opcional)
     public void PlayMusic(AudioClip clip, bool loop = true)
     {
         if (clip != null && musicSource != null)
