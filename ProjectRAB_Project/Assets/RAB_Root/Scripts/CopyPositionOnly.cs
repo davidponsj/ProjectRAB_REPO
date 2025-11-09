@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class CopyPositionOnly : MonoBehaviour
 {
-    public Transform target;       // arrastra tu bola aquÅE    
+    public Transform target;       // Arrastra tu bola aquÌ 
     public Vector3 offset = Vector3.zero;
     public bool lateUpdateCopy = true;
 
