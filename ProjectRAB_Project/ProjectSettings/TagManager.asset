@@ -7,6 +7,7 @@ TagManager:
   - PickUp
   - Obstacle
   - Ground
+  - Water
   layers:
   - Default
   - TransparentFX
