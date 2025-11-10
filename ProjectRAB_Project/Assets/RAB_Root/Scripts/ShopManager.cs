@@ -90,7 +90,7 @@ public class ShopManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        coinsText.text = "Monedas: " + PlayerPrefs.GetInt("NumberOfCoins", 0);
+        coinsText.text = ": " + PlayerPrefs.GetInt("NumberOfCoins", 0);
         BallBlueprint b = balls[currentBallIndex];
         if (b.isUnlocked)
         {
