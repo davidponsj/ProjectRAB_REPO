@@ -1,63 +1,70 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlataformLavaFall : MonoBehaviour
 {
-    // Variables de tipo Float
-    public float timeToFall = 1f; // Tiempo en segundos antes de que la plataforma comience a bajar
-    public float fallSpeed = 0.5f; // Velocidad de descenso de la plataforma
-    public float minY = -30f; // Valor m�nimo del eje Z (donde se detendr� la plataforma)
+    // Variables configurables desde el inspector
+    [Header("Caída")]
+    public float timeToFall = 1f;        // Tiempo antes de que comience a caer
+    public float fallSpeed = 0.5f;       // Velocidad de caída
+    public float minY = -30f;            // Altura mínima (límite inferior)
 
-    private bool isPlayerOnPlatform = false; // Si el jugador esta encima de la plataforma
-    private float timeOnPlatform = 0f; // Contador que no se ve de tiempo cuando el jugador est� sobre la plataforma
-    private Vector3 originalPosition; // Posicion inicial de la plataforma
+    [Header("Temblor")]
+    public float shakeIntensityX = 0.05f; // Intensidad del temblor en X
+    public float shakeIntensityZ = 0.05f; // Intensidad del temblor en Z
+    public float shakeSpeed = 30f;        // Velocidad del temblor
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool isPlayerOnPlatform = false;
+    private float timeOnPlatform = 0f;
+    private Vector3 originalPosition;
+
     void Start()
     {
-        // Guardar la posici�n original de la plataforma
+        // Guardar la posición original de la plataforma
         originalPosition = transform.position;
     }
 
-    // Update se llama una vez por frame
     void Update()
     {
-        //Si el jugador est� sobre la plataforma y ha pasado 1 segundo
+        // Si el jugador está sobre la plataforma
         if (isPlayerOnPlatform)
         {
             timeOnPlatform += Time.deltaTime;
 
-            //Si ha pasado el tiempo necesario se cae
+            // --- TEMBLOR ---
+            float shakeOffsetX = Mathf.Sin(Time.time * shakeSpeed) * shakeIntensityX;
+            float shakeOffsetZ = Mathf.Cos(Time.time * shakeSpeed) * shakeIntensityZ;
+            Vector3 shakenPosition = originalPosition + new Vector3(shakeOffsetX, 0f, shakeOffsetZ);
+
+            // --- CAÍDA ---
             if (timeOnPlatform >= timeToFall)
             {
-                //Se mueve la plataforma lentamente hacia abajo en el eje Z
                 if (transform.position.y > minY)
                 {
-                    transform.position = new Vector3(
-                        transform.position.x,
-                        transform.position.z,
-                        Mathf.Lerp(transform.position.y, minY, fallSpeed * Time.deltaTime)
-                    );
+                    float newY = Mathf.Lerp(transform.position.y, minY, fallSpeed * Time.deltaTime);
+                    transform.position = new Vector3(shakenPosition.x, newY, shakenPosition.z);
                 }
+            }
+            else
+            {
+                // Solo tiembla sin caer todavía
+                transform.position = new Vector3(shakenPosition.x, originalPosition.y, shakenPosition.z);
             }
         }
         else
         {
-            //Si el jugador se quita de la plataforma, se reinicia el contador
+            // Reiniciar el contador si el jugador se quita
             timeOnPlatform = 0f;
 
-            //Si la plataforma no esta en su punto de origen, se vuelve a su posicion original
-            if (transform.position.y < originalPosition.y)
-            {
-                transform.position = new Vector3(
-                    transform.position.x,
-                    transform.position.z,
-                    Mathf.Lerp(transform.position.y, originalPosition.y, fallSpeed * Time.deltaTime)
-                );
-            }
+            // Volver a la posición original suavemente
+            transform.position = new Vector3(
+                Mathf.Lerp(transform.position.x, originalPosition.x, fallSpeed * Time.deltaTime),
+                Mathf.Lerp(transform.position.y, originalPosition.y, fallSpeed * Time.deltaTime),
+                Mathf.Lerp(transform.position.z, originalPosition.z, fallSpeed * Time.deltaTime)
+            );
         }
     }
 
-    //Detecta cuando el jugador se pone encima de la plataforma
+    // Detecta cuando el jugador se sube
     private void OnCollisionEnter(Collision other)
     {
         if (other.gameObject.CompareTag("Player"))
@@ -66,7 +73,7 @@ public class PlataformLavaFall : MonoBehaviour
         }
     }
 
-    //Detecta cuando el jugador sale de la plataforma
+    // Detecta cuando el jugador se baja
     private void OnCollisionExit(Collision other)
     {
         if (other.gameObject.CompareTag("Player"))
@@ -75,5 +82,3 @@ public class PlataformLavaFall : MonoBehaviour
         }
     }
 }
-
-
