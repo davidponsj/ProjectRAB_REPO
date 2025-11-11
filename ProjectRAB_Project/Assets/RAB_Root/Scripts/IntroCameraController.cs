@@ -1,17 +1,16 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using System.Linq;
-using UnityEngine.SceneManagement;
 
 public class IntroCameraController : MonoBehaviour
 {
     [Header("Timeline y cámaras")]
-    public PlayableDirector timeline;    // Timeline de la cámara de intro
-    public GameObject player;            // jugador
-    public GameObject playerCam;         // cámara virtual del jugador (Cinemachine)
+    public PlayableDirector timeline;
+    public GameObject player;
+    public GameObject playerCam;
 
     [Header("HUD / Canvas")]
-    public GameObject[] canvases;        // todos los Canvas del HUD
+    public GameObject[] canvases;
 
     void Awake()
     {
@@ -29,10 +28,8 @@ public class IntroCameraController : MonoBehaviour
 
     void Start()
     {
-        string key = "IntroPlayed_" + SceneManager.GetActiveScene().name;
-
         // Si la intro ya se reprodujo, activamos todo y salimos
-        if (PlayerPrefs.GetInt(key, 0) == 1)
+        if (IntroManager.hasPlayedIntro)
         {
             foreach (var c in canvases) ShowCanvas(c);
             if (player != null) player.SetActive(true);
@@ -54,7 +51,7 @@ public class IntroCameraController : MonoBehaviour
         }
 
         // Marcamos que ya se reprodujo
-        PlayerPrefs.SetInt(key, 1);
+        IntroManager.hasPlayedIntro = true;
     }
 
     void OnTimelineFinished(PlayableDirector pd)
@@ -90,4 +87,3 @@ public class IntroCameraController : MonoBehaviour
         cg.blocksRaycasts = true;
     }
 }
-
