@@ -4,17 +4,17 @@ using UnityEngine;
 public class PlayerSplitter : MonoBehaviour
 {
     [Header("Prefabs & settings")]
-    public GameObject halfPrefab;
-    public float splitForce = 6f;
-    public float upwardForce = 2f;
-    public float lifeAfterSplit = 2f;
+    public GameObject halfPrefab;        // Prefab de la mitad de la bola
+    public float splitForce = 6f;        // Fuerza al separarlas
+    public float upwardForce = 2f;       // Fuerza hacia arriba
+    public float lifeAfterSplit = 2f;    // Cuánto duran las mitades
 
     [Header("Respawn (opcional)")]
-    public float respawnDelay = 0.5f; // Tiempo antes del respawn
-    public Transform respawnPoint;     // Lugar donde reaparece el player
+    public float respawnDelay = 0.5f;    // Tiempo antes del respawn
 
     private bool isSplitting = false;
 
+    // Llamar desde el AxeHazard con la posición del hazard
     public void Split(Vector3 hazardPosition)
     {
         if (isSplitting) return;
@@ -64,29 +64,9 @@ public class PlayerSplitter : MonoBehaviour
             Debug.LogWarning("PlayerSplitter: halfPrefab no asignado en " + gameObject.name);
         }
 
-        // Esperar antes de respawnear
+        // Esperar un poco y reiniciar la escena como respawn simple
         yield return new WaitForSeconds(respawnDelay);
-
-        // ✅ Respawn sin recargar la escena
-        RespawnPlayer();
-    }
-
-    private void RespawnPlayer()
-    {
-        // Reset del player al punto de respawn
-        transform.position = respawnPoint != null ? respawnPoint.position : Vector3.zero;
-        transform.rotation = Quaternion.identity;
-
-        // Reactivar renderers y colliders
-        var rends = GetComponentsInChildren<Renderer>();
-        foreach (var r in rends) r.enabled = true;
-
-        var cols = GetComponentsInChildren<Collider>();
-        foreach (var c in cols) c.enabled = true;
-
-        var rb = GetComponent<Rigidbody>();
-        if (rb) rb.isKinematic = false;
-
-        isSplitting = false;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 }
