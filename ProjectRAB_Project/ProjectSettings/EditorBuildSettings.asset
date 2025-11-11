@@ -6,47 +6,41 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_IntroScene.unity
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_IntroScene.unity
     guid: 284a589ae19f5734194618ae06a8e67a
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_MainMenu.unity
-    guid: bafd89a77da94c64480303f9e58d0d24
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_SantiTest 3.unity
-    guid: 1ff2cbf2e9b649247aac9a18f5d36dcf
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN David/Main Menu.unity
-    guid: e2d50a51d6da3284ab8cd0367f28f61d
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN David/LevelSelector.unity
-    guid: d60fc0c2af057c54a92d01bd646dacbe
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN David/LevelTest1.unity
-    guid: 40072ae24fb630241b959f5da674df63
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN David/LevelTest2.unity
-    guid: a306635f7d5482647b43faa41f28dc47
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN David/LevelTest3.unity
-    guid: a63b24650c5726348b58634ce2f98ba3
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN David/SkinsMenu.unity
-    guid: 3f8715b449d3d8e46a5346148a121cad
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN Alejandro/SCN_Alejandro_2.unity
-    guid: a858b404466b9c545aaa65fb9398ec09
-  - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_MainMenuTest.unity
-    guid: f2c8bffe1d3d71145b36abd175dd5999
   - enabled: 1
     path: Assets/RAB_Root/Scenes/SCN_ContextGame.unity
     guid: 15abbfe50f612c0468e1a4c0a29312c2
   - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_HugoTest 1.unity
-    guid: 153a2dfcae99821408a4f83e329d09d7
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_SantiTest 3.unity
+    guid: 1ff2cbf2e9b649247aac9a18f5d36dcf
   - enabled: 1
-    path: Assets/RAB_Root/Scenes/SCN_AnaTest 2.unity
-    guid: 17f1c99e7ccfe6446b3828da69e794b1
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_MainMenuTest.unity
+    guid: f2c8bffe1d3d71145b36abd175dd5999
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/SkinsMenu.unity
+    guid: 3f8715b449d3d8e46a5346148a121cad
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/LevelSelector.unity
+    guid: d60fc0c2af057c54a92d01bd646dacbe
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/LevelTest1.unity
+    guid: c6dfcf91f88b19f408ea2bc79370c136
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_Alejandro_1.unity
+    guid: da1c240671bcd3f49a1e033929a7fa95
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_AnaTest 2.unity
+    guid: 1203eda59654d4749bea2f2cb3f5c70b
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_Alejandro_2.unity
+    guid: a858b404466b9c545aaa65fb9398ec09
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/NIVEL_3.unity
+    guid: 1fd3431f5317f264eb6c45ab0c199ebe
+  - enabled: 1
+    path: Assets/RAB_Root/Scenes/Definitivos/SCN_Alejandro_3.unity
+    guid: 81c0e61fd9fd87b45a044ad5e7ab60f7
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

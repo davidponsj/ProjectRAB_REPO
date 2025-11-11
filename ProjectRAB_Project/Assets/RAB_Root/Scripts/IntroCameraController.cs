@@ -1,41 +1,57 @@
 using UnityEngine;
 using UnityEngine.Playables;
+using System.Linq;
 
 public class IntroCameraController : MonoBehaviour
 {
     [Header("Timeline y cámaras")]
-    public PlayableDirector timeline;    // Timeline de la cámara de intro
-    public GameObject player;            // jugador
-    public GameObject playerCam;         // cámara virtual del jugador (si usa Cinemachine)
+    public PlayableDirector timeline;
+    public GameObject player;
+    public GameObject playerCam;
 
     [Header("HUD / Canvas")]
-    public GameObject[] canvases;        // todos los Canvas del HUD
+    public GameObject[] canvases;
+
+    void Awake()
+    {
+        // Buscar referencias automáticamente si no están asignadas
+        if (player == null)
+            player = GameObject.FindWithTag("Player");
+
+        if (playerCam == null)
+            playerCam = GameObject.FindWithTag("PlayerCam");
+
+        if (canvases == null || canvases.Length == 0)
+            canvases = GameObject.FindObjectsOfType<Canvas>()
+                       .Select(c => c.gameObject).ToArray();
+    }
 
     void Start()
     {
-        // Si la intro ya se reprodujo, activamos todo y no reproducimos animación
+        // Si la intro ya se reprodujo, activamos todo y salimos
         if (IntroManager.hasPlayedIntro)
         {
             foreach (var c in canvases) ShowCanvas(c);
-            player.SetActive(true);
+            if (player != null) player.SetActive(true);
             if (playerCam != null) playerCam.SetActive(true);
-            timeline.gameObject.SetActive(false); // Timeline desactivado
+            if (timeline != null) timeline.gameObject.SetActive(false);
             return;
         }
 
-        // Primera vez: desactivamos HUD y jugador
+        // Primera vez: ocultamos HUD y jugador
         foreach (var c in canvases) HideCanvas(c);
-        player.SetActive(false);
+        if (player != null) player.SetActive(false);
         if (playerCam != null) playerCam.SetActive(false);
 
         // Reproducimos la animación de la cámara
-        timeline.Play();
+        if (timeline != null)
+        {
+            timeline.Play();
+            timeline.stopped += OnTimelineFinished;
+        }
 
         // Marcamos que ya se reprodujo
         IntroManager.hasPlayedIntro = true;
-
-        // Conectamos el evento de final de animación
-        timeline.stopped += OnTimelineFinished;
     }
 
     void OnTimelineFinished(PlayableDirector pd)
@@ -44,16 +60,15 @@ public class IntroCameraController : MonoBehaviour
         foreach (var c in canvases) ShowCanvas(c);
 
         // Activar jugador
-        player.SetActive(true);
+        if (player != null) player.SetActive(true);
 
         // Desactivar Timeline / cámara de intro
-        timeline.gameObject.SetActive(false);
+        if (timeline != null) timeline.gameObject.SetActive(false);
 
         // Activar cámara del jugador
         if (playerCam != null) playerCam.SetActive(true);
     }
 
-    // Función para ocultar canvas (visual + interacción)
     void HideCanvas(GameObject canvas)
     {
         CanvasGroup cg = canvas.GetComponent<CanvasGroup>();
@@ -63,7 +78,6 @@ public class IntroCameraController : MonoBehaviour
         cg.blocksRaycasts = false;
     }
 
-    // Función para mostrar canvas (visual + interacción)
     void ShowCanvas(GameObject canvas)
     {
         CanvasGroup cg = canvas.GetComponent<CanvasGroup>();
