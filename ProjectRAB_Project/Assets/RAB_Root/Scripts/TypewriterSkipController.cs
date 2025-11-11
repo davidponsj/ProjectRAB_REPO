@@ -9,7 +9,7 @@ public class TypewriterSkipController : MonoBehaviour
     [Header("UI")]
     public TextMeshProUGUI textUI;     // arrastra aquí tu TextMeshProUGUI
     [TextArea(3, 10)]
-    public string fullText;            // texto completo (puedes also setearlo desde inspector)
+    public string fullText;            // texto completo (puedes también setearlo desde inspector)
     public Button continueButton;      // arrastra aquí el botón que llevará al tutorial
 
     [Header("Typewriter")]
@@ -22,6 +22,13 @@ public class TypewriterSkipController : MonoBehaviour
 
     [Header("Escena")]
     public string tutorialSceneName = "Tutorial"; // nombre exacto de la escena a cargar
+
+    [Header("Sonido de tecleo")]
+    public AudioSource audioSource;                // arrastra aquí el componente AudioSource (Play On Awake desactivado)
+    public AudioClip typeSound;                    // arrastra aquí el clip de sonido de tecla (un click corto)
+    public bool soundPerWord = false;              // si true: suena al terminar cada palabra; si false: suena por letra
+    public float typeSoundPitchRandomness = 0.08f; // variación aleatoria en el pitch
+    public float typeSoundDelay = 0.02f;          // retardo mínimo entre sonidos (útil si el text se escribe muy rápido)
 
     bool isTyping = false;
     Coroutine typingCoroutine;
@@ -67,13 +74,62 @@ public class TypewriterSkipController : MonoBehaviour
         textUI.text = "";
         continueButton?.gameObject.SetActive(false);
 
+        float lastSoundTime = -999f;
+
         for (int i = 0; i < fullText.Length; i++)
         {
-            textUI.text += fullText[i];
+            char currentChar = fullText[i];
+            textUI.text += currentChar;
+
+            // Sonido: por palabra o por letra
+            if (typeSound != null && audioSource != null)
+            {
+                if (soundPerWord)
+                {
+                    // reproducir cuando se termina una palabra: al encontrarse un espacio
+                    // y el carácter anterior no fuera espacio, o al llegar al último carácter si no es espacio
+                    if (char.IsWhiteSpace(currentChar))
+                    {
+                        if (i > 0 && !char.IsWhiteSpace(fullText[i - 1]))
+                        {
+                            PlayTypeSound();
+                            lastSoundTime = Time.time;
+                        }
+                    }
+                    else if (i == fullText.Length - 1) // última letra del texto
+                    {
+                        // si el último carácter no es espacio, reproducimos para la última palabra
+                        if (!char.IsWhiteSpace(currentChar))
+                        {
+                            PlayTypeSound();
+                            lastSoundTime = Time.time;
+                        }
+                    }
+                }
+                else // por letra
+                {
+                    // evita reproducir en espacios y respeta el delay mínimo
+                    if (!char.IsWhiteSpace(currentChar) && (Time.time - lastSoundTime >= typeSoundDelay))
+                    {
+                        PlayTypeSound();
+                        lastSoundTime = Time.time;
+                    }
+                }
+            }
+
             yield return new WaitForSeconds(charDelay);
         }
 
         OnTypingComplete();
+    }
+
+    void PlayTypeSound()
+    {
+        if (audioSource == null || typeSound == null) return;
+
+        // variar pitch ligeramente para naturalidad
+        audioSource.pitch = 1f + Random.Range(-typeSoundPitchRandomness, typeSoundPitchRandomness);
+        audioSource.PlayOneShot(typeSound);
     }
 
     void SkipTyping()
