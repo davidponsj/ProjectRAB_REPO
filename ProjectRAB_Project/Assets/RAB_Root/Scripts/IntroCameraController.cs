@@ -1,40 +1,29 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Playables;
-using System.Linq;
+using UnityEngine.SceneManagement;
 
 public class IntroCameraController : MonoBehaviour
 {
     [Header("Timeline y cámaras")]
-    public PlayableDirector timeline;
-    public GameObject player;
-    public GameObject playerCam;
+    public PlayableDirector timeline;    // Timeline de la cámara de intro
+    public GameObject player;            // Jugador principal
+    public GameObject playerCam;         // Cámara del jugador (si usa Cinemachine)
 
     [Header("HUD / Canvas")]
-    public GameObject[] canvases;
+    public GameObject[] canvases;        // Todos los Canvas del HUD a ocultar/mostrar
 
-    void Awake()
-    {
-        // Buscar referencias automáticamente si no están asignadas
-        if (player == null)
-            player = GameObject.FindWithTag("Player");
-
-        if (playerCam == null)
-            playerCam = GameObject.FindWithTag("PlayerCam");
-
-        if (canvases == null || canvases.Length == 0)
-            canvases = GameObject.FindObjectsOfType<Canvas>()
-                       .Select(c => c.gameObject).ToArray();
-    }
+    private bool hasEnded = false;       // Control interno para no ejecutar dos veces
 
     void Start()
     {
-        // Si la intro ya se reprodujo, activamos todo y salimos
+        Debug.Log($"[Intro] Start en escena: {SceneManager.GetActiveScene().name}");
+
+        // Si ya se ha reproducido la intro en esta sesión, saltamos la animación
         if (IntroManager.hasPlayedIntro)
         {
-            foreach (var c in canvases) ShowCanvas(c);
-            if (player != null) player.SetActive(true);
-            if (playerCam != null) playerCam.SetActive(true);
-            if (timeline != null) timeline.gameObject.SetActive(false);
+            Debug.Log("[Intro] Ya se ha reproducido, saltando animación.");
+            ActivateGameplay();
             return;
         }
 
@@ -43,34 +32,61 @@ public class IntroCameraController : MonoBehaviour
         if (player != null) player.SetActive(false);
         if (playerCam != null) playerCam.SetActive(false);
 
-        // Reproducimos la animación de la cámara
-        if (timeline != null)
+        // Reproducir la animación
+        if (timeline != null && timeline.playableAsset != null)
         {
+            timeline.time = 0;
+            timeline.Evaluate();
             timeline.Play();
+
+            // Suscribirse al evento de finalización
             timeline.stopped += OnTimelineFinished;
+
+            // Seguridad: si el evento no salta, forzamos activación tras duración + margen
+            StartCoroutine(ForceFinishAfterTimeline());
+        }
+        else
+        {
+            Debug.LogWarning("[Intro] No hay Timeline asignada o PlayableAsset vacío. Activando gameplay directamente.");
+            ActivateGameplay();
         }
 
-        // Marcamos que ya se reprodujo
+        // Marcamos que ya se ha reproducido
         IntroManager.hasPlayedIntro = true;
     }
 
-    void OnTimelineFinished(PlayableDirector pd)
+    private IEnumerator ForceFinishAfterTimeline()
     {
-        // Activar HUD / Canvas
-        foreach (var c in canvases) ShowCanvas(c);
+        yield return new WaitForSeconds((float)(timeline != null ? timeline.duration : 3f) + 0.2f);
 
-        // Activar jugador
-        if (player != null) player.SetActive(true);
-
-        // Desactivar Timeline / cámara de intro
-        if (timeline != null) timeline.gameObject.SetActive(false);
-
-        // Activar cámara del jugador
-        if (playerCam != null) playerCam.SetActive(true);
+        if (!hasEnded)
+        {
+            Debug.LogWarning("[Intro] Evento 'stopped' no disparado, forzando finalización manual.");
+            OnTimelineFinished(timeline);
+        }
     }
 
-    void HideCanvas(GameObject canvas)
+    private void OnTimelineFinished(PlayableDirector pd)
     {
+        if (hasEnded) return; // evitar doble ejecución
+        hasEnded = true;
+
+        Debug.Log("[Intro] Timeline terminada, activando HUD y Player.");
+
+        ActivateGameplay();
+    }
+
+    private void ActivateGameplay()
+    {
+        foreach (var c in canvases) ShowCanvas(c);
+        if (player != null) player.SetActive(true);
+        if (playerCam != null) playerCam.SetActive(true);
+        if (timeline != null) timeline.gameObject.SetActive(false);
+    }
+
+    private void HideCanvas(GameObject canvas)
+    {
+        if (canvas == null) return;
         CanvasGroup cg = canvas.GetComponent<CanvasGroup>();
         if (cg == null) cg = canvas.AddComponent<CanvasGroup>();
         cg.alpha = 0;
@@ -78,8 +94,9 @@ public class IntroCameraController : MonoBehaviour
         cg.blocksRaycasts = false;
     }
 
-    void ShowCanvas(GameObject canvas)
+    private void ShowCanvas(GameObject canvas)
     {
+        if (canvas == null) return;
         CanvasGroup cg = canvas.GetComponent<CanvasGroup>();
         if (cg == null) cg = canvas.AddComponent<CanvasGroup>();
         cg.alpha = 1;

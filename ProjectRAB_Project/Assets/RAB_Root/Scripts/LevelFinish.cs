@@ -9,7 +9,7 @@ public class LevelFinish : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             UnlockNewLevel();
-            SceneManager.LoadScene(3);
+            SceneManager.LoadScene(10);
         }
     }
 
