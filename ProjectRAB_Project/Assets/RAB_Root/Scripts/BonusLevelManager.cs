@@ -1,39 +1,43 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class BonusLevelManager : MonoBehaviour
 {
     [Header("Timer Settings")]
-    public float levelTime = 60f;
+    public float levelTime = 60f; // Duración del nivel
     private float currentTime;
 
+    [Header("UI Settings")]
+    public TextMeshProUGUI timerText; // Referencia al texto en pantalla
+
     [Header("PickUp Settings")]
-    public string bonusPickupTag = "BonusPickUp"; // Tag de los pickups del nivel bonus
+    public string bonusPickupTag = "BonusPickUp";
     private int totalPickUps;
     private int collectedPickUps;
 
     [Header("Scene Settings")]
-    public int failSceneIndex = 3;
-    public int successSceneIndex = 4;
+    public string failSceneName = "LevelWithSpawnPoints";
+    public string successSceneName = "SuccessScene";
 
     [Header("Reward Settings")]
-    public int rewardBallIndex = 1; // Debe coincidir con BallBlueprint.index en ShopManager
+    public int rewardBallIndex = 1;
+
+    [Header("Checkpoint Settings")]
+    public string checkpointName; // Checkpoint de este bonus en la escena de destino
 
     private bool levelEnded = false;
+
+    // Variable estática para pasar el checkpoint entre escenas
+    public static string nextCheckpoint;
 
     void Start()
     {
         currentTime = levelTime;
 
-        // Contamos los pickups del nivel bonus al inicio
         GameObject[] pickups = GameObject.FindGameObjectsWithTag(bonusPickupTag);
         totalPickUps = pickups.Length;
         collectedPickUps = 0;
-
-        if (totalPickUps == 0)
-            Debug.LogWarning(" No se encontraron pickups con el tag '" + bonusPickupTag + "' en la escena.");
-
-        Debug.Log("Inicio nivel bonus: " + totalPickUps + " pickups totales.");
     }
 
     void Update()
@@ -42,13 +46,19 @@ public class BonusLevelManager : MonoBehaviour
 
         currentTime -= Time.deltaTime;
 
-        // Contamos cuántos pickups quedan activos en escena
+        // Actualizamos el contador en pantalla
+        if (timerText != null)
+        {
+            int minutes = Mathf.FloorToInt(currentTime / 60);
+            int seconds = Mathf.FloorToInt(currentTime % 60);
+            timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+
+            if (currentTime <= 5) // Opcional: cambiar color si queda poco tiempo
+                timerText.color = Color.red;
+        }
+
         int remaining = GameObject.FindGameObjectsWithTag(bonusPickupTag).Length;
         collectedPickUps = totalPickUps - remaining;
-
-        // Debug en consola
-        Debug.Log("Tiempo restante: " + Mathf.CeilToInt(currentTime) +
-                  "s | Recogidos: " + collectedPickUps + " / " + totalPickUps);
 
         // Nivel completado
         if (totalPickUps > 0 && collectedPickUps >= totalPickUps)
@@ -72,17 +82,37 @@ public class BonusLevelManager : MonoBehaviour
         {
             PlayerPrefs.SetInt(rewardKey, 1);
             PlayerPrefs.Save();
-            Debug.Log("Skin desbloqueada: " + rewardKey);
         }
 
-        Debug.Log("Nivel bonus completado.");
-        SceneManager.LoadScene(successSceneIndex);
+        SceneManager.LoadScene(successSceneName);
     }
 
     void LevelFailed()
     {
         levelEnded = true;
-        Debug.Log("No conseguiste todos los pickups a tiempo.");
-        SceneManager.LoadScene(failSceneIndex);
+
+        // Guardamos el checkpoint
+        nextCheckpoint = checkpointName;
+
+        // Cargamos la escena de destino
+        SceneManager.sceneLoaded += MovePlayerToCheckpoint;
+        SceneManager.LoadScene(failSceneName);
+    }
+
+    void MovePlayerToCheckpoint(Scene scene, LoadSceneMode mode)
+    {
+        GameObject player = GameObject.FindWithTag("Player");
+        GameObject checkpoint = GameObject.Find(nextCheckpoint);
+
+        if (player != null && checkpoint != null)
+        {
+            player.transform.position = checkpoint.transform.position;
+        }
+        else
+        {
+            Debug.LogWarning("Jugador o checkpoint no encontrado");
+        }
+
+        SceneManager.sceneLoaded -= MovePlayerToCheckpoint;
     }
 }
