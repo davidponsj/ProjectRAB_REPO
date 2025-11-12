@@ -14,21 +14,34 @@ public class ShopManager : MonoBehaviour
 
     void Start()
     {
-        foreach(BallBlueprint ball in balls)
+        // Verificamos todas las bolas
+        foreach (BallBlueprint ball in balls)
         {
             if (ball.price == 0)
+            {
+                // Skin gratuita
                 ball.isUnlocked = true;
+            }
             else
-                ball.isUnlocked = PlayerPrefs.GetInt(ball.name, 0)==0 ? false: true;
+            {
+                // Desbloqueada por compra normal o por recompensa bonus
+                ball.isUnlocked = PlayerPrefs.GetInt(ball.name, 0) == 1 ||
+                                  PlayerPrefs.GetInt("RewardBall_" + ball.index, 0) == 1;
+            }
 
+            Debug.Log("Leyendo skin: " + ball.name + " index: " + ball.index + " desbloqueada: " + ball.isUnlocked);
         }
 
+        // Bola actualmente seleccionada
         currentBallIndex = PlayerPrefs.GetInt("SelectedBall", 0);
-        foreach(GameObject ball in ballModels)
+
+        // Desactivamos todos los modelos
+        foreach (GameObject ball in ballModels)
             ball.SetActive(false);
 
         ballModels[currentBallIndex].SetActive(true);
     }
+
 
     // Update is called once per frame
     void Update()

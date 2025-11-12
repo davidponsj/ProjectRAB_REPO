@@ -29,6 +29,11 @@ public class PlayerInteractor : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other.gameObject.CompareTag("BonusPickUp"))
+        {
+            Destroy(other.gameObject); // Destruye el pickup
+                                       // Aquí no sumamos a PlayerInteractor.coins, lo contamos solo en BonusLevelManager
+        }
         // Si el jugador toca un objeto con tag "PickUp"
         if (other.gameObject.CompareTag("PickUp"))
         {
@@ -45,6 +50,8 @@ public class PlayerInteractor : MonoBehaviour
             PlayerPrefs.SetInt("NumberOfCoins", coins); // Actualiza el total de monedas
         }
     }
+
+
 
     public void LoadScene()
     {
