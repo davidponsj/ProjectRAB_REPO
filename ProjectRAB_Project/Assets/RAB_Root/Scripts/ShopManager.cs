@@ -14,33 +14,35 @@ public class ShopManager : MonoBehaviour
 
     void Start()
     {
-        // Verificamos todas las bolas
         foreach (BallBlueprint ball in balls)
         {
             if (ball.price == 0)
             {
-                // Skin gratuita
-                ball.isUnlocked = true;
+                ball.isUnlocked = true; // gratuita
+            }
+            else if (ball.isReward)
+            {
+                // Skin de recompensa: desbloqueada solo si se completó el nivel bonus
+                ball.isUnlocked = PlayerPrefs.GetInt("RewardBall_" + ball.index, 0) == 1;
             }
             else
             {
-                // Desbloqueada por compra normal o por recompensa bonus
-                ball.isUnlocked = PlayerPrefs.GetInt(ball.name, 0) == 1 ||
-                                  PlayerPrefs.GetInt("RewardBall_" + ball.index, 0) == 1;
+                // Skin normal: desbloqueada si se compró
+                ball.isUnlocked = PlayerPrefs.GetInt(ball.name, 0) == 1;
             }
 
-            Debug.Log("Leyendo skin: " + ball.name + " index: " + ball.index + " desbloqueada: " + ball.isUnlocked);
+            Debug.Log("Leyendo skin: " + ball.name + " index: " + ball.index + " desbloqueada: " + ball.isUnlocked + " isReward: " + ball.isReward);
         }
 
-        // Bola actualmente seleccionada
         currentBallIndex = PlayerPrefs.GetInt("SelectedBall", 0);
 
-        // Desactivamos todos los modelos
         foreach (GameObject ball in ballModels)
             ball.SetActive(false);
 
         ballModels[currentBallIndex].SetActive(true);
     }
+
+
 
 
     // Update is called once per frame
@@ -103,9 +105,10 @@ public class ShopManager : MonoBehaviour
 
     private void UpdateUI()
     {
+        BallBlueprint ball = balls[currentBallIndex];
         coinsText.text = ": " + PlayerPrefs.GetInt("NumberOfCoins", 0);
-        BallBlueprint b = balls[currentBallIndex];
-        if (b.isUnlocked)
+
+        if (ball.isUnlocked)
         {
             buyButton.gameObject.SetActive(false);
             selectButton.gameObject.SetActive(true);
@@ -113,20 +116,24 @@ public class ShopManager : MonoBehaviour
         }
         else
         {
-            
             buyPrice.gameObject.SetActive(true);
-            buyButton.gameObject.SetActive(true);
-            buyPrice.text = b.price + " Monedas";
-            selectButton.gameObject.SetActive(false);
-            if(b.price <= PlayerPrefs.GetInt("NumberOfCoins", 0))
+
+            if (ball.isReward)
             {
-                buyButton.interactable = true;
+                // Skin de recompensa bloqueada, no se puede comprar
+                buyButton.gameObject.SetActive(false);
+                buyPrice.text = "Desbloquea en nivel bonus";
             }
             else
             {
-                buyButton.interactable = false;
+                // Skin normal comprable
+                buyButton.gameObject.SetActive(true);
+                buyPrice.text = ball.price + " Monedas";
+                buyButton.interactable = ball.price <= PlayerPrefs.GetInt("NumberOfCoins", 0);
             }
 
+            selectButton.gameObject.SetActive(false);
         }
     }
+
 }
